@@ -3,13 +3,13 @@ from helpers import load_cfg
 from glob import glob
 import os
 
-CFG_FILE = "./utils/config.yaml"
+CFG_FILE = "config.yaml"
 
 
 def main():
     cfg = load_cfg(CFG_FILE)
     datalake_cfg = cfg["datalake"]
-    fake_data_cfg = cfg["fake_data"]
+    taxi_data_cfg = cfg["taxi_data"]
 
     # Create a client with the MinIO server playground, its access key
     # and secret key.
@@ -28,7 +28,7 @@ def main():
         print(f'Bucket {datalake_cfg["bucket_name"]} already exists, skip creating!')
 
     # Upload files.
-    all_fps = glob(os.path.join(fake_data_cfg["folder_path"], "*.parquet"))
+    all_fps = glob(os.path.join(taxi_data_cfg["folder_path"], "*.parquet"))
 
     for fp in all_fps:
         print(f"Uploading {fp}")

@@ -1,10 +1,10 @@
-fake_data:
-  folder_path: ./data/pump
-  num_files: 3
+taxi_data:
+  folder_path: ../data
+  num_files: 2
 
 datalake:
   endpoint: localhost:9000
-  bucket_name: iot-time-series
-  folder_name: pump
+  bucket_name: taxi-data
+  folder_name: data
   access_key: minio_access_key
   secret_key: minio_secret_key
