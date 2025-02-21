@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-from helpers import load_cfg
+from datalake.src.helpers import load_cfg
 
 CFG_PATH = "./utils/config.yaml"
 

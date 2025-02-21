@@ -45,19 +45,24 @@ docker exec -ti datalake-trino bash
 trino
 ```
 
-### 2. Creating Schema and Table
+### 2. Creating Schemas and Tables
 
-First, create the schema:
+First, create the bronze and silver schemas:
 
 ```sql
-CREATE SCHEMA IF NOT EXISTS datalake.data
-WITH (location = 's3://taxi-data/');
+-- Create schemas for bronze and silver layers
+CREATE SCHEMA IF NOT EXISTS datalake.bronze
+WITH (location = 's3://bronze/');
+
+CREATE SCHEMA IF NOT EXISTS datalake.silver
+WITH (location = 's3://silver/');
 ```
 
-Then, create the taxi trips table:
+Then, create the taxi trips tables in both layers:
 
 ```sql
-CREATE TABLE datalake.data.taxi_trips (
+-- Create table in bronze layer (raw data)
+CREATE TABLE datalake.bronze.taxi_trips (
   dolocationid INT,
   dropoff_datetime TIMESTAMP,
   fare_amount DOUBLE,
@@ -75,10 +80,54 @@ CREATE TABLE datalake.data.taxi_trips (
   trip_distance DOUBLE,
   vendorid INT
 ) WITH (
-  external_location = 's3://taxi-data/data',
+  external_location = 's3://bronze/raw',
+  format = 'PARQUET'
+);
+
+-- Create table in silver layer (processed data)
+CREATE TABLE datalake.silver.taxi_trips (
+  dolocationid INT,
+  dropoff_datetime TIMESTAMP,
+  fare_amount DOUBLE,
+  improvement_surcharge DOUBLE,
+  mta_tax DOUBLE,
+  passenger_count INT,
+  payment_type INT,
+  pickup_datetime TIMESTAMP,
+  pulocationid INT,
+  ratecodeid DOUBLE,
+  store_and_fwd_flag VARCHAR(30),
+  tip_amount DOUBLE,
+  tolls_amount DOUBLE,
+  total_amount DOUBLE,
+  trip_distance DOUBLE,
+  vendorid INT,
+  -- Additional derived columns for silver layer
+  trip_duration_minutes DOUBLE,
+  cost_per_mile DOUBLE,
+  day_of_week VARCHAR(10),
+  hour_of_day INT
+) WITH (
+  external_location = 's3://silver/processed',
   format = 'PARQUET'
 );
 ```
+
+## Data Lake Architecture
+
+Our data lake follows a multi-layer architecture:
+
+### Bronze Layer
+- Raw data storage
+- Minimal transformations
+- Complete history preservation
+- Location: s3://bronze/raw
+
+### Silver Layer
+- Cleaned and processed data
+- Additional derived columns
+- Business logic applications
+- Location: s3://silver/processed
 
 ## Example Queries
 
@@ -92,7 +141,7 @@ SELECT
     AVG(trip_distance) as avg_distance,
     AVG(total_amount) as avg_fare,
     AVG(tip_amount) as avg_tip
-FROM datalake.data.taxi_trips;
+FROM datalake.silver.taxi_trips;
 ```
 
 ### 2. Hourly Trip Analysis
@@ -104,7 +153,7 @@ SELECT
     EXTRACT(HOUR FROM pickup_datetime) as hour_of_day,
     COUNT(*) as num_trips,
     AVG(total_amount) as avg_fare
-FROM datalake.data.taxi_trips
+FROM datalake.silver.taxi_trips
 GROUP BY EXTRACT(HOUR FROM pickup_datetime)
 ORDER BY hour_of_day;
 ```
