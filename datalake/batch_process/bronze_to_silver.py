@@ -27,7 +27,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class SilverProcessor:
-    def __init__(self, config_file="../config.yaml"):
+    def __init__(self, config_file="datalake/config.yaml"):
         self.cfg = load_cfg(config_file)
         self.minio_cfg = self.cfg["minio"]
         self.bronze_cfg = self.cfg["datalake"]["bronze"]
@@ -39,7 +39,7 @@ class SilverProcessor:
             .config("spark.hadoop.fs.s3a.endpoint", f"http://{self.minio_cfg['endpoint']}")
             .config("spark.hadoop.fs.s3a.access.key", self.minio_cfg["access_key"])
             .config("spark.hadoop.fs.s3a.secret.key", self.minio_cfg["secret_key"])
-             .config("spark.jars", "/home/drissdo/Desktop/End-to-end-NYC-analysis/datalake/jars/aws-java-sdk-bundle-1.11.901.jar, /home/drissdo/Desktop/End-to-end-NYC-analysis/datalake/jars/hadoop-aws-3.3.1.jar") \
+            .config("spark.jars", "/home/drissdo/Desktop/End-to-end-NYC-analysis/datalake/jars/aws-java-sdk-bundle-1.11.901.jar, /home/drissdo/Desktop/End-to-end-NYC-analysis/datalake/jars/hadoop-aws-3.3.1.jar") \
             .config("spark.hadoop.fs.s3a.path.style.access", "true") \
             .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
             .getOrCreate())
