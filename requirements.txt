@@ -1,3 +1,6 @@
-fastparquet==2023.8.0
-minio==7.1.16
-PyYAML==6.0.1
+minio==7.2.12
+python-dotenv==1.0.0
+pyspark==3.5.3
+numpy
+kafka-python
+Faker
