@@ -1,5 +1,5 @@
 source_data:
-  folder_path: ../../data
+  folder_path: /home/drissdo/Desktop/End-to-end-NYC-analysis/data
   num_files: 2
 
 minio:
