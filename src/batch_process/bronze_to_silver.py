@@ -69,7 +69,7 @@ def process_file(spark, minio_client, bronze_bucket, silver_bucket, file_path):
         
         cleaned_df = clean_data_with_spark(df)
         
-        # Write to a temporary location
+
         cleaned_df.coalesce(1).write \
             .format("csv") \
             .option("header", "true") \
