@@ -9,13 +9,9 @@ from pyspark.sql.functions import lit, col
 
 os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
 os.environ["PATH"] = os.environ["JAVA_HOME"] + "/bin:" + os.environ["PATH"]
-
 load_dotenv()
 
 def create_spark_session():
-    minio_endpoint = os.getenv("MINIO_ENDPOINT", "localhost:9000")
-    minio_access_key = os.getenv("MINIO_ACCESS_KEY", "minio_access_key")
-    minio_secret_key = os.getenv("MINIO_SECRET_KEY", "minio_secret_key")
     
     spark = SparkSession.builder \
             .appName("LoanDefaultPrediction") \
@@ -65,6 +61,7 @@ def clean_data_with_spark(spark_df):
 def process_file(spark, minio_client, bronze_bucket, silver_bucket, file_path):
     file_name = os.path.basename(file_path)
     file_base_name = os.path.splitext(file_name)[0]
+    temp_dir_name = f"{file_base_name}_temp"
     output_file_name = f"{file_base_name}.csv"
     
     if file_path.endswith('.parquet'):
@@ -72,16 +69,33 @@ def process_file(spark, minio_client, bronze_bucket, silver_bucket, file_path):
         
         cleaned_df = clean_data_with_spark(df)
         
+        # Write to a temporary location
         cleaned_df.coalesce(1).write \
             .format("csv") \
             .option("header", "true") \
             .mode("overwrite") \
-            .save(f"s3a://{silver_bucket}/{output_file_name}")
+            .save(f"s3a://{bronze_bucket}/{temp_dir_name}")
         
+        temp_files = list_files_in_bucket(minio_client, bronze_bucket, prefix=temp_dir_name)
+        
+        part_file = next((f for f in temp_files if f.endswith('.csv')), None)
+        
+        if part_file:
+    
+            local_path = f"/tmp/part_file.csv"
+            minio_client.fget_object(bronze_bucket, part_file, local_path)
+            
+        
+            minio_client.fput_object(silver_bucket, output_file_name, local_path)
+            
+            os.remove(local_path)
+        
+            for temp_file in temp_files:
+                minio_client.remove_object(bronze_bucket, temp_file)
+            
         return True
     else:
         return False
-
 def main():
     bronze_bucket = os.getenv("BRONZE_BUCKET", "bronze")
     silver_bucket = os.getenv("SILVER_BUCKET", "silver")
