@@ -105,7 +105,7 @@ def create_payment_metrics(spark, silver_bucket, gold_bucket):
     """Create payment-type metrics"""
     df = spark.read.parquet(f"s3a://{silver_bucket}/*")
     
-    
+    # Add payment method description
     df_with_payment = df.withColumn("payment_method", 
                                 when(col("payment_type") == 1, "Credit Card")
                                 .when(col("payment_type") == 2, "Cash")
@@ -121,8 +121,10 @@ def create_payment_metrics(spark, silver_bucket, gold_bucket):
                            sum("total_amount").alias("total_revenue")
                        )
     
+    # Create pickup_hour column before using it
+    df_with_hour = df.withColumn("pickup_hour", hour(col("tpep_pickup_datetime")))
     
-    tip_analysis = df.filter(col("payment_type") == 1) \
+    tip_analysis = df_with_hour.filter(col("payment_type") == 1) \
                      .withColumn("tip_percentage", (col("tip_amount") / col("fare_amount")) * 100) \
                      .groupBy("pickup_hour") \
                      .agg(

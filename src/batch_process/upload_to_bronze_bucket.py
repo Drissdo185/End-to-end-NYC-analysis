@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import logging
 import time
 
-# Configure logging
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Load environment variables
+
 load_dotenv()
 
 def create_minio_client():
@@ -55,11 +55,11 @@ def upload_file_to_minio(client, bucket_name, file_path, object_name=None):
         object_name = os.path.basename(file_path)
     
     try:
-        # Get file stats
+       
         file_stat = os.stat(file_path)
         file_size = file_stat.st_size
         
-        # Upload the file
+        
         client.fput_object(
             bucket_name=bucket_name,
             object_name=object_name,
@@ -77,16 +77,16 @@ def upload_directory_to_minio(client, bucket_name, directory_path, prefix=""):
     error_count = 0
     start_time = time.time()
     
-    # Walk through the directory
+    
     for root, dirs, files in os.walk(directory_path):
         for file in files:
-            # Get the full path of the file
+            
             file_path = os.path.join(root, file)
             
             rel_path = os.path.relpath(file_path, directory_path)
             object_name = os.path.join(prefix, rel_path).replace("\\", "/")
             
-            # Upload the file
+            
             if upload_file_to_minio(client, bucket_name, file_path, object_name):
                 success_count += 1
             else:
@@ -99,29 +99,29 @@ def upload_directory_to_minio(client, bucket_name, directory_path, prefix=""):
     return success_count, error_count
 
 def main():
-    """Main function to upload raw data to bronze bucket."""
+    
     try:
-        # Define paths and bucket names
+       
         raw_data_dir = os.getenv("RAW_DATA_DIR", "data")
         bronze_bucket = os.getenv("BRONZE_BUCKET", "bronze")
         prefix = os.getenv("BRONZE_PREFIX", "")
         
-        # Ensure the raw data directory exists
+        
         if not os.path.exists(raw_data_dir):
             logger.error(f"Raw data directory not found: {raw_data_dir}")
             return
         
-        # Create MinIO client and ensure bucket exists
+        
         minio_client = create_minio_client()
         ensure_bucket_exists(minio_client, bronze_bucket)
         
-        # Upload all files from raw data directory to bronze bucket
+        
         logger.info(f"Starting upload from {raw_data_dir} to {bronze_bucket}")
         success_count, error_count = upload_directory_to_minio(
             minio_client, bronze_bucket, raw_data_dir, prefix
         )
         
-        # Log summary
+       
         logger.info(f"Upload completed: {success_count} files uploaded, {error_count} errors")
         
     except Exception as e:
