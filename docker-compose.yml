@@ -21,11 +21,23 @@ services:
     image: postgres:11
     hostname: metastore_db
     ports:
-      - '5433:5432' # Access via Thrift protocol
+      - '5433:5432' 
     environment:
       POSTGRES_USER: hive
       POSTGRES_PASSWORD: hive
       POSTGRES_DB: metastore
+
+
+  data_postges:
+    container_name: data_postges
+    image: postgres:11
+    hostname: data_postges
+    ports:
+      - '5432:5432' 
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: postgres
 
   # Expose service to get metadata, which is a repository of metadata about the tables, 
   # such as database names, table names, schema and data location of each table
