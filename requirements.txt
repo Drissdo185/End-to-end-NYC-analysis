@@ -4,4 +4,6 @@ pyspark==3.5.3
 numpy
 kafka-python
 Faker
+apache-airflow
+apache-airflow-providers-amazon
 
