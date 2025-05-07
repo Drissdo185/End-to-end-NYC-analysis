@@ -1,34 +1,51 @@
-# NYC Taxi Data Lake Documentation
+# NYC Taxi Data Lake
 
-## Overview
 
-This document outlines the setup and configuration of a data lake for NYC taxi trip data using a modern data stack including Trino, MinIO, and Hive Metastore. The system enables efficient querying and analysis of taxi trip data through a distributed SQL query engine.
 
-## Architecture
+A modern data lake solution for analyzing NYC taxi trip data using Trino, MinIO, and Hive Metastore. This system enables efficient querying and analysis of large volumes of taxi trip data through a distributed SQL query engine.
 
-### Components
+## 🚀 Quick Start
 
-- **MinIO**: Object storage service compatible with Amazon S3 API, used for storing raw data
-- **Hive Metastore**: Metadata repository for Hadoop/Hive tables
-- **Trino**: Distributed SQL query engine for big data
-- **Apache Spark**: Data processing engine used for ETL operations
+1. Clone the repository
+2. Start the infrastructure:
+   ```bash
+   docker-compose up -d
+   ```
+3. Access the services:
+   - Trino UI: http://localhost:8080
+   - MinIO Console: http://localhost:9001
+   - Hive Metastore: localhost:9083
+
+## 🏗️ Architecture
+
+### Core Components
+
+| Component | Purpose | Port |
+|-----------|---------|------|
+| MinIO | Object storage (S3-compatible) | 9000, 9001 |
+| Hive Metastore | Metadata repository | 9083 |
+| Trino | Distributed SQL query engine | 8080 |
+| Apache Spark | ETL processing | - |
 
 ### Data Flow
 
-1. Raw data files (Parquet format) are uploaded to MinIO bronze bucket
-2. Spark processes data and stores it in silver bucket
-3. Trino provides SQL interface to query data across all buckets
+```mermaid
+graph LR
+    A[Raw Data] --> B[MinIO Bronze]
+    B --> C[Spark Processing]
+    C --> D[MinIO Silver]
+    D --> E[Trino Query Engine]
+```
 
-## Infrastructure Setup
+## 🛠️ Infrastructure Setup
+
+### Prerequisites
+
+- Docker and Docker Compose
+- 4GB+ RAM
+- 20GB+ free disk space
 
 ### Docker Compose Configuration
-
-The infrastructure is containerized using Docker Compose with the following services:
-
-- **Trino**: Distributed query engine
-- **Hive Metastore**: Metadata repository
-- **MinIO**: Object storage
-- **Postgres**: Database for Hive Metastore
 
 ```yaml
 version: "3.9"
@@ -89,17 +106,15 @@ services:
     command: server --console-address ":9001" /data
 ```
 
-## Trino Configuration
+## 📝 Configuration
 
-### Catalog Configuration
+### Trino Catalog Setup
 
-Create a catalog configuration file at `trino/catalog/datalake.properties`:
+Create `trino/catalog/datalake.properties`:
 
 ```properties
 connector.name=hive
 hive.metastore.uri=thrift://hive-metastore:9083
-
-# Object storage credentials (MinIO)
 hive.s3.endpoint=http://minio:9000
 hive.s3.aws-access-key=minio_access_key
 hive.s3.aws-secret-key=minio_secret_key
@@ -108,33 +123,25 @@ hive.s3.ssl.enabled=false
 hive.allow-drop-table=true
 ```
 
-### File Permissions
-
-Ensure proper file permissions:
-
-```bash
-chmod 644 trino/catalog/datalake.properties
-```
-
-## Data Schema Setup
-
-### Creating Schema
-
-Connect to Trino CLI and create a schema:
-
+First, execute trino container:
 ```bash
 docker exec -ti datalake-trino bash
+```
+Then run the following command:
+```bash
 trino
 ```
+
+## 💾 Data Schema
+
+### Schema Creation
 
 ```sql
 CREATE SCHEMA IF NOT EXISTS datalake.nyc_taxi 
 WITH (location = 's3://bronze/');
 ```
 
-### Creating Table
-
-Create an external table for NYC taxi data:
+### Table Definition
 
 ```sql
 CREATE TABLE IF NOT EXISTS datalake.nyc_taxi.yellow_tripdata (
@@ -164,11 +171,9 @@ WITH (
 );
 ```
 
-## Data Processing
+## 🔄 Data Processing
 
-### Bronze to Silver
-
-The data processing pipeline uses Spark to transform data from the bronze bucket to the silver bucket:
+### Data Cleaning with Spark
 
 ```python
 def clean_data_with_spark(spark_df):
@@ -182,9 +187,9 @@ def clean_data_with_spark(spark_df):
     return cleaned_df
 ```
 
-## Querying Data
+## 🔍 Querying Data
 
-After setting up the schema and tables, you can query the data using standard SQL:
+Example query to analyze payment types and fares:
 
 ```sql
 SELECT 
@@ -199,49 +204,33 @@ ORDER BY
     avg_fare DESC;
 ```
 
-## Troubleshooting
 
-### Catalog Not Found
+## Running batch processing
 
-If you receive the error `Catalog 'datalake' does not exist`:
+First, install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-1. Verify the catalog configuration file exists and has correct permissions
-   ```bash
-   ls -la trino/catalog/
-   chmod 644 trino/catalog/datalake.properties
-   ```
+Then, run the following command:
+```bash
+cd src/batch_processing
+```
 
-2. Restart the Trino container
-   ```bash
-   docker restart datalake-trino
-   ```
+Then, run the following command:
+```bash
+python upload_data.py
+```
 
-3. Check Trino logs for errors
-   ```bash
-   docker logs datalake-trino
-   ```
+Then, run the following command:
+```bash
+python bronze_to_silver.py
+```
+if you got bug, please check did you download  aws-java-sdk-bundle-1.11.901.jar and hadoop-aws-3.3.1.jar and check path of these files in Spark Session.
 
-4. Verify Hive Metastore connection
-   ```bash
-   docker ps | grep metastore
-   ```
+Finally, run the following command:
+```bash
+python silver_to_gold.py
+```
 
-### MinIO Connection Issues
-
-If Trino can't connect to MinIO:
-
-1. Verify MinIO is running
-   ```bash
-   docker ps | grep minio
-   ```
-
-2. Check MinIO logs
-   ```bash
-   docker logs datalake-minio
-   ```
-
-3. Verify bucket existence in MinIO console at `http://localhost:9001`
-
-## Conclusion
-
-This documentation provides a comprehensive guide to setting up and using a data lake for NYC taxi trip data. By following these steps, you can create a scalable and efficient system for analyzing large volumes of taxi trip data using SQL.
+You can go to localhost:9001 to see the data in MinIO Console with user: minio_access_key and password: minio_secret_key
