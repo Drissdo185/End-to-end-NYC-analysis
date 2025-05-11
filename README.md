@@ -4,6 +4,8 @@
 
 A modern data lake solution for analyzing NYC taxi trip data using Trino, MinIO, and Hive Metastore. This system enables efficient querying and analysis of large volumes of taxi trip data through a distributed SQL query engine.
 
+
+![Architecture](figures/architecture.png "My Awesome Project Logo")
 ## 🚀 Quick Start
 
 1. Clone the repository
