@@ -90,51 +90,7 @@ services:
       MINIO_ACCESS_KEY: minio_access_key
       MINIO_SECRET_KEY: minio_secret_key
     command: server --console-address ":9001" /data
-
-  # Airflow services
-  airflow-webserver:
-    image: apache/airflow:2.7.1
-    container_name: datalake-airflow-webserver
-    ports:
-      - "8081:8080"  # Changed port to avoid conflict with Trino
-    volumes:
-      - ./src/airflow/dags:/opt/airflow/dags
-      - ./src/batch_process:/opt/airflow/batch_process
-      - ./.env:/opt/airflow/.env
-    environment:
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
-    depends_on:
-      - airflow-db
-    command: webserver
-
-  airflow-scheduler:
-    image: apache/airflow:2.7.1
-    container_name: datalake-airflow-scheduler
-    volumes:
-      - ./src/airflow/dags:/opt/airflow/dags
-      - ./src/batch_process:/opt/airflow/batch_process
-      - ./.env:/opt/airflow/.env
-    environment:
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False
-    depends_on:
-      - airflow-db
-    command: scheduler
-
-  airflow-db:
-    image: postgres:13
-    container_name: datalake-airflow-db
-    environment:
-      - POSTGRES_USER=airflow
-      - POSTGRES_PASSWORD=airflow
-      - POSTGRES_DB=airflow
-    volumes:
-      - airflow_db_data:/var/lib/postgresql/data
+  
 
 volumes:
   minio_storage:
-  airflow_db_data:
